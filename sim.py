@@ -3,23 +3,57 @@ import random
 import numpy as np
 
 
+def variable_poisson(*kwargs) -> int :
+    if len(kwargs) == 1:
+        return np.random.poisson(kwargs[0])[0]
+    else:
+        raise ValueError("Poisson distribution takes only one parameter")
+
+def variable_exponential(*kwargs) -> float:
+    if len(kwargs) == 1:
+        return np.random.exponential(kwargs[0])
+    else:
+        raise ValueError("Exponential distribution takes only one parameter")
+
+def variable_uniform(*kwargs) -> float:
+    if len(kwargs) == 2:
+        return np.random.uniform(kwargs[0], kwargs[1])
+    else:
+        raise ValueError("Uniform distribution takes only two parameters")
+
+def variable_normal(*kwargs):
+    if len(kwargs) == 2:
+        return np.random.normal(kwargs[0], kwargs[1])
+    else:
+        raise ValueError("Normal distribution takes only two parameters")
+
+
+#dictionary so I can send the distribution as a lambda
+distributions = {
+    "poisson": variable_poisson,
+    "exponential": variable_exponential,
+    "uniform": variable_uniform,
+    "normal": variable_normal
+}
+
 class Server:
     """
     A server (till) that has a service time distribution
     """
-    def __init__(self, service_time_dist, index):
-        self.service_time_dist = service_time_dist
+    def __init__(self, distribution, index, *args):
         self.busy = False
         self.time_remaining = 0
         self.index = index
+        self.service_time_dist = distribution
+        self.args = args
 
     def start_service(self, instance_time):
         """
         Start service
         """
         self.busy = True
-        self.time_remaining = self.service_time_dist[instance_time]
-        print(f"Server {self.index} started service at time {instance_time} with time remaining {self.time_remaining}")
+        self.time_remaining = int(distributions[self.service_time_dist](*self.args))
+        #print(f"Server {self.index} started service at time {instance_time} with time remaining {self.time_remaining}")
 
     def service_one_time_unit(self, instance_time):
         """
@@ -29,7 +63,7 @@ class Server:
             self.time_remaining -= 1
             if self.time_remaining < 0:
                 self.busy = False
-                print(f"Server {self.index} finished service at time {instance_time}")
+                #print(f"Server {self.index} finished service at time {instance_time}")
 
 
 class Customer:
@@ -43,14 +77,16 @@ class Simulation:
     """
     A simulation of a M/M/c queuing system
     """
-    def __init__(self, arrivals_dist: list[int], service_time_dist, simulation_time, num_servers=2):
+    def __init__(self, arrivals_dist, *args, servers, simulation_time):
         self.queue = queue.Queue()
         self.servers = []
         self.arrivals_dist = arrivals_dist
 
-        for i in service_time_dist:
-            print(f'Service: {i}')
-            self.servers.append(Server(i, len(self.servers) + 1))
+        for i in servers:
+            self.servers.append(i)
+
+        self.arr_args = args
+
         self.clock = 0
         self.simulation_time = simulation_time
         self.cust_served = 0
@@ -71,8 +107,10 @@ class Simulation:
         """
         Handle arrivals
         """
-        if self.arrivals_dist[instance_time] > 0:
-            for i in range(self.arrivals_dist[instance_time]):
+        #call the lambda arrival_dist function
+        arr = distributions[self.arrivals_dist](self.arr_args)
+        if arr > 0:
+            for i in range(arr):
                 self.queue.put(Customer(instance_time))
                 self.cust_arrived += 1
 
@@ -104,31 +142,20 @@ class Simulation:
 
 
 
-# Test
-#arrivals distributes Poisson(5)
-arrivals = np.random.poisson(5, 100)
+#Testing
+arrival_dist = "poisson"
+lambda_arrival = 2
 
-#2 servers
-#service time distributes Exponential(1) only integers
-service_time_1 = np.random.exponential(1, 100).astype(int)
-#service time distributes Exponential(2)
-service_time_2 = np.random.exponential(2, 100).astype(int)
+server_1 = Server("exponential", 1, 1)
+server_2 = Server("uniform", 2, 1, 3)
+server_3 = Server("normal", 3, 5, 2)
 
-
-services = [service_time_1, service_time_2]
+servers = [server_1, server_2, server_3]
 
 
 
-sim = Simulation(arrivals, services, 100, 2)
-
-
+#run simulation
+sim = Simulation(arrival_dist, lambda_arrival, servers=servers, simulation_time=60*8)
 sim.run()
 sim.Stats()
-
-
-
-
-
-
-
 
