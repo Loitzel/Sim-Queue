@@ -38,12 +38,14 @@ distributions = {
 
 class Sim:
     def __init__(self, arrival_dist, *args, total_time):
+        
         #time variable
         self.t = 0
 
         #counting variables
         self.NA = self.ND = 0
         self.n = 0
+
         #state variables
         self.n1 = self.n2 = 0
 
@@ -64,12 +66,14 @@ class Sim:
 
         self.T0 = distributions[self.arrival_dist](*self.arrival_args)
         self.ta = self.T0
+    
     def run(self):
+        
         while self.t < self.total_time:
 
             if self.ta == min(self.ta, self.t1, self.t2) and self.ta <= self.total_time:
-                self.t = self.ta
-                self.NA += 1
+                self.t = self.ta #Update current time
+                self.NA += 1 #Updates arrivals
                 self.n1 += 1
                 Tt = distributions[self.arrival_dist](*self.arrival_args)
                 self.ta = self.t + Tt
@@ -77,6 +81,7 @@ class Sim:
                     y1 = distributions["exponential"](1)
                     self.t1 = self.t + y1
                 self.A1[self.NA] = self.t
+            
             if self.t1 < self.ta and self.t1 <= self.t2 and self.t1< self.total_time:
                 self.t = self.t1
                 self.n1 -= 1
@@ -116,7 +121,7 @@ class Sim:
 
 def main():
     # Simulate the system 1000 times
-    sim = Sim("poisson", 1, total_time=1000)
+    sim = Sim("poisson", 1, total_time=10)
     sim.run()
     sim.print_results()
 
