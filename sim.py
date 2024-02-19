@@ -2,41 +2,43 @@ import queue
 import random
 import numpy as np
 
+class Distribution:
+    def __init__(self, distribution, *args):
+        self.distribution = distribution
+        self.args = args
 
-def variable_poisson(*kwargs) -> int :
+    def __call__(self):
+        raise NotImplementedError("This method should be implemented in the subclass")
 
-    return np.random.poisson(1)
-    # if len(kwargs) == 1:
-    #     return np.random.poisson(kwargs[0])
-    # else:
-    #     raise ValueError("Poisson distribution takes only one parameter")
+class Poisson(Distribution):
+    def __init__(self, *args):
+        super().__init__('variable_poisson', *args)
 
-def variable_exponential(*kwargs) -> float:
-    if len(kwargs) == 1:
-        return np.random.exponential(kwargs[0])
-    else:
-        raise ValueError("Exponential distribution takes only one parameter")
+    def __call__(self):
+        return np.random.poisson(self.args[0])
 
-def variable_uniform(*kwargs) -> float:
-    if len(kwargs) == 2:
-        return np.random.uniform(kwargs[0], kwargs[1])
-    else:
-        raise ValueError("Uniform distribution takes only two parameters")
+class Exponential(Distribution):
+    def __init__(self, *args):
+        super().__init__('variable_exponential', *args)
 
-def variable_normal(*kwargs):
-    if len(kwargs) == 2:
-        return np.random.normal(kwargs[0], kwargs[1])
-    else:
-        raise ValueError("Normal distribution takes only two parameters")
+    def __call__(self):
+        return np.random.exponential(self.args[0])
 
 
-#dictionary so I can send the distribution as a lambda
-distributions = {
-    "poisson": variable_poisson,
-    "exponential": variable_exponential,
-    "uniform": variable_uniform,
-    "normal": variable_normal
-}
+class Uniform(Distribution):
+    def __init__(self, *args):
+        super().__init__('variable_uniform', *args)
+
+    def __call__(self):
+        return np.random.uniform(self.args[0], self.args[1])
+
+class Normal(Distribution):
+    def __init__(self, *args):
+        super().__init__('variable_normal', *args)
+
+    def __call__(self):
+        return np.random.normal(self.args[0], self.args[1])
+
 
 class StateVariables:
     def __init__(self, array_size):
@@ -94,13 +96,13 @@ class StateVariables:
 
 class Sim:
     
-    def __init__(self, server_distributions, arrival_time_distribution, total_time):
+    def __init__(self, servers, arrival_dist, total_time):
         
         #time variable
         self.Time = 0
         self.TotalTime = total_time
 
-        amount_of_servers = len(server_distributions)
+        amount_of_servers = len(servers)
         self.stateVariables = StateVariables(amount_of_servers)
 
         #Counter Variables
@@ -108,11 +110,11 @@ class Sim:
         self.NDepartures = [0] * amount_of_servers #Total number of clients attended by server i
 
         #Distributions
-        self.server_distributions = server_distributions
-        self.arrival_time_distribution = arrival_time_distribution
+        self.servers = servers
+        self.arrival_dist = arrival_dist
 
         #Output Variables
-        self.NextArrivalTime = arrival_time_distribution() #arrival time of client i
+        self.NextArrivalTime = arrival_dist()
         self.DepartureTime = [float('inf')]  * amount_of_servers #departure time of client i
 
         #Events
@@ -132,16 +134,16 @@ class Sim:
 
                 self.Time = self.NextArrivalTime
                 self.NArrivals += 1
-                self.NextArrivalTime = self.Time + self.arrival_time_distribution()
+                self.NextArrivalTime = self.Time + self.arrival_dist()
 
-                print("Number of Arrivals: ", self.NArrivals)
+                # print("Number of Arrivals: ", self.NArrivals)
                 
                 #Add the client that just arrived, the method on stateVariables handles the location of the client, returns -1 if theres no server available
                 server_Number = self.stateVariables.AddClient()
 
                 #If theres no server available, it returns -1, if there is one, we calculate the next departure from that server
                 if server_Number != -1:
-                    self.DepartureTime[server_Number] = self.Time + self.server_distributions[server_Number]()
+                    self.DepartureTime[server_Number] = self.Time + self.servers[server_Number]()
                 
                 else:
                     pass
@@ -152,14 +154,14 @@ class Sim:
                 self.Time = next_event
                 self.NDepartures[next_departure_index] += 1
 
-                print("Client is leaving, number: " + str(self.stateVariables.Client_On_Server[next_departure_index]))
+                # print("Client is leaving, number: " + str(self.stateVariables.Client_On_Server[next_departure_index]))
                 self.stateVariables.RemoveClient(next_departure_index)
 
                 #If theres someone waiting for be attended, we place it on the now free server
                 if(self.stateVariables.Clients_On_Queue > 0):
                     
                     self.stateVariables.Place_From_Queue(next_departure_index)
-                    self.DepartureTime[next_departure_index] = self.Time + self.server_distributions[next_departure_index]()
+                    self.DepartureTime[next_departure_index] = self.Time + self.servers[next_departure_index]()
 
                 else:
                     self.DepartureTime[next_departure_index] = float('inf')
@@ -173,22 +175,29 @@ class Sim:
 
                 if(self.stateVariables.Clients_On_Queue > 0):
                     self.stateVariables.Place_From_Queue(next_departure_index)
-                    self.DepartureTime[next_departure_index] = self.Time + self.server_distributions[next_departure_index]()
+                    self.DepartureTime[next_departure_index] = self.Time + self.servers[next_departure_index]()
 
                 if self.stateVariables.NoMoreClients():
-                    print(self.stateVariables.Client_On_Server)
+                    # print(self.stateVariables.Client_On_Server)
                     break
 
-            print("Clients on Queue: ", self.stateVariables.Clients_On_Queue)
-            print(self.stateVariables.Client_On_Server)
-            print()
+            # print("Clients on Queue: ", self.stateVariables.Clients_On_Queue)
+            # print(self.stateVariables.Client_On_Server)
+            # print()
             
 
-def main():
+
+def one_run():
     # Simulate the system 1000 times
-    sim = Sim([variable_poisson, variable_poisson, variable_poisson], variable_poisson, total_time=10)
+    server1 = Normal(5,8)
+    server2 = Uniform(4,3)
+    server3 = Exponential(5)
+
+    arrival = Poisson(1)
+
+    sim = Sim([server1, server2, server3], arrival, total_time=60*8)
     sim.run()
-    #sim.print_results()
 
 
-main()
+for i in range(1000):
+    one_run()
