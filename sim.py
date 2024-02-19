@@ -42,17 +42,25 @@ class StateVariables:
     def __init__(self, array_size):
         self.Clients_On_Queue = 0
         self.Client_On_Server = [0] * array_size
+        self.queue = queue.Queue()
+        self.last_client = 0
 
-    def AddClient(self, client_number):
+    def AddClient(self):
         
         freeServer = self.FindFirstFreeServer()
 
+        #add client to queue
+        self.last_client += 1
+        self.queue.put(self.last_client)
+        self.Clients_On_Queue += 1
+
         if freeServer != -1:
-            self.Client_On_Server[freeServer] = client_number
-            return freeServer
-        else:
-            self.Clients_On_Queue += 1
-            return -1
+            self.Clients_On_Queue -= 1
+            next_client = self.queue.get()
+            self.Client_On_Server[freeServer] = next_client
+
+        return freeServer
+
             
     def FindFirstFreeServer(self):
         for i in range(len(self.Client_On_Server)):
@@ -63,11 +71,15 @@ class StateVariables:
     def RemoveClient(self, server_number):
 
         self.Client_On_Server[server_number] = 0
-        
+
+
+    def Place_From_Queue(self, server_number):
         if self.Clients_On_Queue > 0:
             self.Clients_On_Queue -= 1
+            next_client = self.queue.get()
+            self.Client_On_Server[server_number] = next_client
             return True
-        
+
         return False
     
     def NoMoreClients(self):
@@ -75,7 +87,7 @@ class StateVariables:
         ClientsOnServers = False
         for i in range(len(self.Client_On_Server)):
             if self.Client_On_Server[i] != 0:
-                noClientsOnServers = True
+                ClientsOnServers = True
 
         return self.Clients_On_Queue == 0 and not ClientsOnServers
 
@@ -125,7 +137,7 @@ class Sim:
                 print("Number of Arrivals: ", self.NArrivals)
                 
                 #Add the client that just arrived, the method on stateVariables handles the location of the client, returns -1 if theres no server available
-                server_Number = self.stateVariables.AddClient(self.NArrivals)
+                server_Number = self.stateVariables.AddClient()
 
                 #If theres no server available, it returns -1, if there is one, we calculate the next departure from that server
                 if server_Number != -1:
@@ -140,15 +152,13 @@ class Sim:
                 self.Time = next_event
                 self.NDepartures[next_departure_index] += 1
 
-                next_Client_Number = max(self.stateVariables.Client_On_Server) + 1
-
                 print("Client is leaving, number: " + str(self.stateVariables.Client_On_Server[next_departure_index]))
                 self.stateVariables.RemoveClient(next_departure_index)
 
                 #If theres someone waiting for be attended, we place it on the now free server
                 if(self.stateVariables.Clients_On_Queue > 0):
                     
-                    self.stateVariables.AddClient(next_Client_Number)
+                    self.stateVariables.Place_From_Queue(next_departure_index)
                     self.DepartureTime[next_departure_index] = self.Time + self.server_distributions[next_departure_index]()
 
                 else:
@@ -159,6 +169,11 @@ class Sim:
                 self.Time = next_event
                 self.NDepartures[next_departure_index] += 1
                 self.stateVariables.RemoveClient(next_departure_index)
+                self.DepartureTime[next_departure_index] = float('inf')
+
+                if(self.stateVariables.Clients_On_Queue > 0):
+                    self.stateVariables.Place_From_Queue(next_departure_index)
+                    self.DepartureTime[next_departure_index] = self.Time + self.server_distributions[next_departure_index]()
 
                 if self.stateVariables.NoMoreClients():
                     print(self.stateVariables.Client_On_Server)
