@@ -2,6 +2,7 @@ import queue
 import random
 import numpy as np
 
+# This class is a wrapper for the numpy random distributions
 class Distribution:
     def __init__(self, distribution, *args):
         self.distribution = distribution
@@ -39,6 +40,19 @@ class Normal(Distribution):
     def __call__(self):
         return np.random.normal(self.args[0], self.args[1])
 
+class Gamma(Distribution):
+    def __init__(self, *args):
+        super().__init__('variable_gamma', *args)
+
+    def __call__(self):
+        return np.random.gamma(self.args[0], self.args[1])
+
+class Erlang(Distribution):
+    def __init__(self, *args):
+        super().__init__('variable_erlang', *args)
+
+    def __call__(self):
+        return np.random.gamma(self.args[0], 1/self.args[0])
 
 class StateVariables:
     def __init__(self, array_size):
@@ -46,6 +60,10 @@ class StateVariables:
         self.Client_On_Server = [0] * array_size
         self.queue = queue.Queue()
         self.last_client = 0
+
+        self.total_clients = 0
+        self.enqueued_clients = 0
+
 
     def AddClient(self):
         
@@ -56,10 +74,15 @@ class StateVariables:
         self.queue.put(self.last_client)
         self.Clients_On_Queue += 1
 
+        self.total_clients +=1
+        self.enqueued_clients += 1
+
         if freeServer != -1:
             self.Clients_On_Queue -= 1
             next_client = self.queue.get()
             self.Client_On_Server[freeServer] = next_client
+            if next_client == self.last_client:
+                self.enqueued_clients -= 1
 
         return freeServer
 
@@ -119,7 +142,10 @@ class Sim:
 
         #Events
         self.nextArrival = 0
-        self.nextDeparture = [0] * amount_of_servers 
+        self.nextDeparture = [0] * amount_of_servers
+
+        self.zero_clients_intervals = []
+        self.used = False
 
     def run(self):
 
@@ -127,16 +153,23 @@ class Sim:
             
             next_event = min(self.NextArrivalTime, min(self.DepartureTime))
             next_departure_index = self.DepartureTime.index(min(self.DepartureTime))
+
             
             #Case 1: A client arrives before someone else leaves
             if self.NextArrivalTime == next_event and self.Time <= self.TotalTime:
-                
+
+                #if the system was empty, we store the time it stops being empty
+                if self.stateVariables.NoMoreClients() and self.used is False:
+                    self.used = True
+                    self.zero_clients_intervals.append(self.Time)
+                    self.zero_clients_intervals.append(self.NextArrivalTime)
 
                 self.Time = self.NextArrivalTime
+
                 self.NArrivals += 1
                 self.NextArrivalTime = self.Time + self.arrival_dist()
 
-                # print("Number of Arrivals: ", self.NArrivals)
+                print("Number of Arrivals: ", self.NArrivals)
                 
                 #Add the client that just arrived, the method on stateVariables handles the location of the client, returns -1 if theres no server available
                 server_Number = self.stateVariables.AddClient()
@@ -147,14 +180,18 @@ class Sim:
                 
                 else:
                     pass
+
+
             
             #Case 2: A client leaves a server
             elif self.Time <= self.TotalTime:
 
+
+
                 self.Time = next_event
                 self.NDepartures[next_departure_index] += 1
 
-                # print("Client is leaving, number: " + str(self.stateVariables.Client_On_Server[next_departure_index]))
+                print("Client is leaving, number: " + str(self.stateVariables.Client_On_Server[next_departure_index]))
                 self.stateVariables.RemoveClient(next_departure_index)
 
                 #If theres someone waiting for be attended, we place it on the now free server
@@ -166,9 +203,13 @@ class Sim:
                 else:
                     self.DepartureTime[next_departure_index] = float('inf')
 
+                if self.stateVariables.NoMoreClients():
+                    self.used = False
+
+
             #Case 3: Time is over, we attend the rest of the clients
             else:
-                self.Time = next_event
+                self.Time = min(self.DepartureTime)
                 self.NDepartures[next_departure_index] += 1
                 self.stateVariables.RemoveClient(next_departure_index)
                 self.DepartureTime[next_departure_index] = float('inf')
@@ -178,26 +219,77 @@ class Sim:
                     self.DepartureTime[next_departure_index] = self.Time + self.servers[next_departure_index]()
 
                 if self.stateVariables.NoMoreClients():
-                    # print(self.stateVariables.Client_On_Server)
+                    print(self.stateVariables.Client_On_Server)
                     break
 
-            # print("Clients on Queue: ", self.stateVariables.Clients_On_Queue)
-            # print(self.stateVariables.Client_On_Server)
-            # print()
+            print("Clients on Queue: ", self.stateVariables.Clients_On_Queue)
+            print(self.stateVariables.Client_On_Server)
+            print()
+
+        print("Time: ", self.Time)
+
+        print("Total Arrivals: ", self.NArrivals)
+        print("Total Departures: ", self.NDepartures)
+        print("Total Clients: ", self.stateVariables.total_clients)
+        print("Enqueued Clients: ", self.stateVariables.enqueued_clients)
+
+        print('Probability that a new costumer has to join the queue:', self.stateVariables.enqueued_clients/self.stateVariables.total_clients)
+
+        #zero clients times
+        times = 0
+        for i in range(0, len(self.zero_clients_intervals), 2):
+            times += self.zero_clients_intervals[i+1] - self.zero_clients_intervals[i]
+
+        print("Zero Clients Time: ", times)
+        print('Probability of 0 clients in the system: ', times/self.Time)
             
 
 
 def one_run():
     # Simulate the system 1000 times
     server1 = Normal(5,8)
-    server2 = Uniform(4,3)
+    server2 = Gamma(4,3)
     server3 = Exponential(5)
+    server4 = Uniform(3,7)
+    server5 = Erlang(4)
 
     arrival = Poisson(1)
 
-    sim = Sim([server1, server2, server3], arrival, total_time=60*8)
+    sim = Sim([server3]*5, arrival, total_time=60*8)
     sim.run()
 
 
-for i in range(1000):
-    one_run()
+one_run()
+
+from math import gamma
+def Mathematical_Model():
+    c = 5
+    mu = 5
+    lambda_ = 1
+
+    rho = lambda_ / (c * mu)
+
+    def Erlang_C(c,rho):
+        return (1 - (c*rho)**c * gamma(c+1) * sum([(c*rho)**i / gamma(i+1) for i in range(c)]))
+
+    def Avg_Clients(c, rho):
+        return (rho/(1-rho))*(Erlang_C(c,rho)) + (c*rho)
+
+    def pi_0(c,rho):
+        sum1 = (c*rho)**c / gamma(c+1)
+        sum1 *= 1/(1-rho)
+
+        sum2 = sum([(c*rho)**i / gamma(i+1) for i in range(c)])
+
+        return 1/(sum1 + sum2)
+
+
+
+    print('\nMathematical Values:')
+    #esto no me queda claro
+    print('Probability of 0 clients in the system: ', pi_0(c,rho))
+    print('Probability that a new costumer has to join the queue:', Erlang_C(c,rho))
+    print('Average number of clients in the system:', Avg_Clients(c,rho))
+
+Mathematical_Model()
+
