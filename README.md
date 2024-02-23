@@ -23,6 +23,8 @@ Evaluar la probabilidad de que un cliente no pueda ser atentido inmediatamente d
 
 Cantidad de servidores: Representa el número de servidores disponibles en el sistema para atender a los clientes. 
 
+Tiempo de servicio: Indica la duración total del servicio.
+
 Distribución de llegada de clientes: Describe el patrón o la ley que sigue la llegada de nuevos clientes al sistema. 
 
 Distribución de tiempo de servicio: Indica cómo se distribuyen los tiempos de servicio de los servidores al atender a los clientes. 
@@ -78,3 +80,8 @@ Insertar
 ### Descripcion del modelo de simulacion
 
 ### Supuestos y restricciones
+Movimiento instantáneo entre servidores: Se asume que el movimiento de clientes entre servidores es instantáneo, lo que significa que un cliente puede pasar de un servidor a otro sin demora alguna.
+
+Distribución invariable de llegadas de clientes: Se supone que la distribución de llegadas de clientes no cambia con el tiempo. Esto implica que la tasa de llegada de clientes se mantiene constante durante toda la simulación.
+
+Permanencia de clientes no atendidos: Se establece que un cliente que llega al sistema permanece en el sistema hasta que es atendido por un servidor o hasta que concluye el tiempo de servicio sin ser atendido. No se permite que un cliente abandone el sistema sin ser atendido, a menos que expire el tiempo de servicio.
