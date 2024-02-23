@@ -4,6 +4,13 @@ import random
 import numpy as np
 from tabulate import tabulate
 
+def calculate_mean(data):
+    return sum(data) / len(data)
+
+def calculate_variance(data, mean):
+    sum_squared_diff = sum((x - mean) ** 2 for x in data)
+    return sum_squared_diff / (len(data) - 1)
+
 class StatisticsHolder:
     def __init__(self):
         self.waiting_times = []
@@ -263,26 +270,19 @@ probabilities_of_waiting = [stat.probability_of_waiting_in_queue() for stat in g
 num_clients_served = [stat.num_clients_served for stat in global_stats]
 num_clients = [stat.num_clients for stat in global_stats]
 
-mean_waiting_times = sum(waiting_times) / len(waiting_times)
-mean_max_waiting_times = sum(max_waiting_times) / len(max_waiting_times)
-mean_probabilities_of_waiting = sum(probabilities_of_waiting) / len(probabilities_of_waiting)
-mean_num_clients_served = sum(num_clients_served) / len(num_clients_served)
-mean_num_clients = sum(num_clients) / len(num_clients)
+# Usando la función para calcular las medias
+mean_waiting_times = calculate_mean(waiting_times)
+mean_max_waiting_times = calculate_mean(max_waiting_times)
+mean_probabilities_of_waiting = calculate_mean(probabilities_of_waiting)
+mean_num_clients_served = calculate_mean(num_clients_served)
+mean_num_clients = calculate_mean(num_clients)
 
-sum_squared_diff_waiting_times = sum((x - mean_waiting_times) ** 2 for x in waiting_times)
-variance_waiting_times = sum_squared_diff_waiting_times / (len(waiting_times) - 1)
-
-sum_squared_diff_max_waiting_times = sum((x - mean_max_waiting_times) ** 2 for x in max_waiting_times)
-variance_max_waiting_times = sum_squared_diff_max_waiting_times / (len(max_waiting_times) - 1)
-
-sum_squared_diff_probabilities_of_waiting = sum((x - mean_probabilities_of_waiting) ** 2 for x in probabilities_of_waiting)
-variance_probabilities_of_waiting = sum_squared_diff_probabilities_of_waiting / (len(probabilities_of_waiting) - 1)
-
-sum_squared_diff_num_clients_served = sum((x - mean_num_clients_served) ** 2 for x in num_clients_served)
-variance_num_clients_served = sum_squared_diff_num_clients_served / (len(num_clients_served) - 1)
-
-sum_squared_diff_num_clients = sum((x - mean_num_clients) ** 2 for x in num_clients)
-variance_num_clients = sum_squared_diff_num_clients / (len(num_clients) - 1)
+# Usando la función para calcular las varianzas
+variance_waiting_times = calculate_variance(waiting_times, mean_waiting_times)
+variance_max_waiting_times = calculate_variance(max_waiting_times, mean_max_waiting_times)
+variance_probabilities_of_waiting = calculate_variance(probabilities_of_waiting, mean_probabilities_of_waiting)
+variance_num_clients_served = calculate_variance(num_clients_served, mean_num_clients_served)
+variance_num_clients = calculate_variance(num_clients, mean_num_clients)
 
 
 # Organizar los datos en un formato adecuado
@@ -296,3 +296,4 @@ headers = ["Statistic", "Waiting Times", "Max Waiting Times", "Probabilities of 
 
 # Imprimir la tabla
 print(tabulate(data, headers=headers))
+
