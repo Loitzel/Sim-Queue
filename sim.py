@@ -9,6 +9,7 @@ class StatisticsHolder:
         self.max_wait_time = float('-inf')
         self.num_clients_served = 0
         self.num_clients = 0
+        self.customers_in_queue_due_to_wait = 0
 
     def add_waiting_time(self, waiting_time):
         self.waiting_times.append(waiting_time)
@@ -29,9 +30,14 @@ class StatisticsHolder:
             return 0
         return self.max_wait_time
     
+    def probability_of_waiting_in_queue(self):
+        return self.customers_in_queue_due_to_wait / self.num_clients
+    
     def print_stats(self):
         print("Total clients served:", self.num_clients_served)
         print("Total clients unattended:", self.client_unattended())
+        print("Customers in queue due to wait:", self.customers_in_queue_due_to_wait)
+        print("Probability of waiting in queue:", self.probability_of_waiting_in_queue())
         print("Average waiting time:", self.average_waiting_time())
         print("Max waiting time:", self.max_waiting_time())
 
@@ -187,6 +193,7 @@ class Sim:
                     self.stats.add_waiting_time(waiting_time)
                 
                 else:
+                    self.stats.customers_in_queue_due_to_wait += 1
                     pass
             
             #Case 2: A client leaves a server
@@ -232,16 +239,30 @@ class Sim:
 
 
 def one_run():
-    server1 = Normal(5,8)
-    server2 = Uniform(4,3)
-    server3 = Exponential(5)
+    server1 = Exponential(5)
+    server2 = Exponential(6)
+    server3 = Exponential(3)
 
     arrival = Poisson(1)
 
     sim = Sim([server1, server2, server3], arrival, total_time=100)
     sim.run()
-    sim.stats.print_stats()
+    return sim.stats
 
 
-for i in range(1):
-    one_run()
+global_stats = []
+
+for i in range(1000):
+    global_stats.append(one_run())
+
+waiting_times = [stat.average_waiting_time() for stat in global_stats]
+max_waiting_times = [stat.max_waiting_time() for stat in global_stats]
+probabilities_of_waiting = [stat.probability_of_waiting_in_queue() for stat in global_stats]
+num_clients_served = [stat.num_clients_served for stat in global_stats]
+num_clients = [stat.num_clients for stat in global_stats]
+
+print("Average waiting time:", np.mean(waiting_times))
+print("Max waiting time:", np.mean(max_waiting_times))
+print("Probability of waiting in queue:", np.mean(probabilities_of_waiting))
+print("Average clients served:", np.mean(num_clients_served))
+print("Average clients:", np.mean(num_clients))
