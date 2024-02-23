@@ -4,6 +4,71 @@ import random
 import numpy as np
 from tabulate import tabulate
 
+def generate_statistical_data(k, acceptable_deviation):
+    
+    global_data = []
+    for i in range(k):
+        global_data.append(one_run())
+
+    waiting_times = [x.average_waiting_time() for x in global_data]
+    max_waiting_times = [x.max_waiting_time() for x in global_data]
+    probabilities_of_waiting = [x.probability_of_waiting_in_queue() for x in global_data]
+    num_clients_served = [x.num_clients_served for x in global_data]
+    num_clients = [x.num_clients for x in global_data]
+
+    # Usando la función para calcular las medias
+    mean_waiting_times = calculate_mean(waiting_times)
+    mean_max_waiting_times = calculate_mean(max_waiting_times)
+    mean_probabilities_of_waiting = calculate_mean(probabilities_of_waiting)
+    mean_num_clients_served = calculate_mean(num_clients_served)
+    mean_num_clients = calculate_mean(num_clients)
+
+    # Usando la función para calcular las varianzas
+    variance_waiting_times = calculate_variance(waiting_times, mean_waiting_times)
+    variance_max_waiting_times = calculate_variance(max_waiting_times, mean_max_waiting_times)
+    variance_probabilities_of_waiting = calculate_variance(probabilities_of_waiting, mean_probabilities_of_waiting)
+    variance_num_clients_served = calculate_variance(num_clients_served, mean_num_clients_served)
+    variance_num_clients = calculate_variance(num_clients, mean_num_clients)
+
+    # Calcular el error estándar
+    standard_error_waiting_times = math.sqrt(variance_waiting_times / k)
+    standard_error_max_waiting_times = math.sqrt(variance_max_waiting_times / k)
+    standard_error_probabilities_of_waiting = math.sqrt(variance_probabilities_of_waiting / k)
+    standard_error_num_clients_served = math.sqrt(variance_num_clients_served / k)
+    standard_error_num_clients = math.sqrt(variance_num_clients / k)
+
+    # Calcular el intervalo de confianza para 95% de confianza
+    confidence_interval_waiting_times = (mean_waiting_times - 1.96 * standard_error_waiting_times, mean_waiting_times + 1.96 * standard_error_waiting_times)
+    confidence_interval_max_waiting_times = (mean_max_waiting_times - 1.96 * standard_error_max_waiting_times, mean_max_waiting_times + 1.96 * standard_error_max_waiting_times)
+    confidence_interval_probabilities_of_waiting = (mean_probabilities_of_waiting - 1.96 * standard_error_probabilities_of_waiting, mean_probabilities_of_waiting + 1.96 * standard_error_probabilities_of_waiting)
+    confidence_interval_num_clients_served = (mean_num_clients_served - 1.96 * standard_error_num_clients_served, mean_num_clients_served + 1.96 * standard_error_num_clients_served)
+    confidence_interval_num_clients = (mean_num_clients - 1.96 * standard_error_num_clients, mean_num_clients + 1.96 * standard_error_num_clients)
+
+    # Calcular la amplitud del intervalo de confianza para cada estadística
+    amplitude_waiting_times = confidence_interval_waiting_times[1] - confidence_interval_waiting_times[0]
+    amplitude_max_waiting_times = confidence_interval_max_waiting_times[1] - confidence_interval_max_waiting_times[0]
+    amplitude_probabilities_of_waiting = confidence_interval_probabilities_of_waiting[1] - confidence_interval_probabilities_of_waiting[0]
+    amplitude_num_clients_served = confidence_interval_num_clients_served[1] - confidence_interval_num_clients_served[0]
+    amplitude_num_clients = confidence_interval_num_clients[1] - confidence_interval_num_clients[0]
+    
+    # Definir los datos como una lista de tuplas
+    data = [
+        ("Waiting Times", mean_waiting_times, variance_waiting_times, standard_error_waiting_times, confidence_interval_waiting_times, amplitude_waiting_times),
+        ("Max Waiting Times", mean_max_waiting_times, variance_max_waiting_times, standard_error_max_waiting_times, confidence_interval_max_waiting_times, amplitude_max_waiting_times),
+        ("Probabilities of Waiting", mean_probabilities_of_waiting, variance_probabilities_of_waiting, standard_error_probabilities_of_waiting, confidence_interval_probabilities_of_waiting, amplitude_probabilities_of_waiting),
+        ("Num Clients Served", mean_num_clients_served, variance_num_clients_served, standard_error_num_clients_served, confidence_interval_num_clients_served, amplitude_num_clients_served),
+        ("Num Clients", mean_num_clients, variance_num_clients, standard_error_num_clients, confidence_interval_num_clients, amplitude_num_clients)
+    ]
+
+    # Definir los encabezados de la tabla
+    headers = ["Variable", "Mean", "Variance", "Standard Error", "95% Confidence Interval", "Amplitude"]
+
+    # Imprimir la tabla utilizando la función tabulate
+    print(tabulate(data, headers=headers, tablefmt="grid"))
+
+    
+    
+
 def calculate_mean(data):
     return sum(data) / len(data)
 
@@ -258,42 +323,10 @@ def one_run():
     sim.run()
     return sim.stats
 
+k = 100
+acceptable_deviation = 0.05
 
-global_stats = []
-
-for i in range(1000):
-    global_stats.append(one_run())
-
-waiting_times = [stat.average_waiting_time() for stat in global_stats]
-max_waiting_times = [stat.max_waiting_time() for stat in global_stats]
-probabilities_of_waiting = [stat.probability_of_waiting_in_queue() for stat in global_stats]
-num_clients_served = [stat.num_clients_served for stat in global_stats]
-num_clients = [stat.num_clients for stat in global_stats]
-
-# Usando la función para calcular las medias
-mean_waiting_times = calculate_mean(waiting_times)
-mean_max_waiting_times = calculate_mean(max_waiting_times)
-mean_probabilities_of_waiting = calculate_mean(probabilities_of_waiting)
-mean_num_clients_served = calculate_mean(num_clients_served)
-mean_num_clients = calculate_mean(num_clients)
-
-# Usando la función para calcular las varianzas
-variance_waiting_times = calculate_variance(waiting_times, mean_waiting_times)
-variance_max_waiting_times = calculate_variance(max_waiting_times, mean_max_waiting_times)
-variance_probabilities_of_waiting = calculate_variance(probabilities_of_waiting, mean_probabilities_of_waiting)
-variance_num_clients_served = calculate_variance(num_clients_served, mean_num_clients_served)
-variance_num_clients = calculate_variance(num_clients, mean_num_clients)
+generate_statistical_data(k, acceptable_deviation)
 
 
-# Organizar los datos en un formato adecuado
-data = [
-    ["Mean", mean_waiting_times, mean_max_waiting_times, mean_probabilities_of_waiting, mean_num_clients_served, mean_num_clients],
-    ["Variance", variance_waiting_times, variance_max_waiting_times, variance_probabilities_of_waiting, variance_num_clients_served, variance_num_clients]
-]
-
-# Definir los encabezados de las columnas
-headers = ["Statistic", "Waiting Times", "Max Waiting Times", "Probabilities of Waiting", "Num Clients Served", "Num Clients"]
-
-# Imprimir la tabla
-print(tabulate(data, headers=headers))
 
