@@ -42,7 +42,7 @@ M/M/c
 ### Hallazgos de la simulacion
 Insertar 
 
-### Interpretacion de los reusltados
+### Interpretacion de los resultados
 Insertar
 
 ### Necesidad de realizar el analisis estadistico a la simulacion

@@ -2,6 +2,40 @@ import queue
 import random
 import numpy as np
 
+class StatisticsHolder:
+    def __init__(self):
+        self.waiting_times = []
+        self.total_wait_time = 0
+        self.max_wait_time = float('-inf')
+        self.num_clients_served = 0
+        self.num_clients = 0
+
+    def add_waiting_time(self, waiting_time):
+        self.waiting_times.append(waiting_time)
+        self.total_wait_time += waiting_time
+        if waiting_time > self.max_wait_time:
+            self.max_wait_time = waiting_time
+
+    def client_unattended(self):
+        return self.num_clients - self.num_clients_served
+
+    def average_waiting_time(self):
+        if self.num_clients_served == 0:
+            return 0
+        return self.total_wait_time / self.num_clients_served
+
+    def max_waiting_time(self):
+        if self.max_wait_time == float('-inf'):
+            return 0
+        return self.max_wait_time
+    
+    def print_stats(self):
+        print("Total clients served:", self.num_clients_served)
+        print("Total clients unattended:", self.client_unattended())
+        print("Average waiting time:", self.average_waiting_time())
+        print("Max waiting time:", self.max_waiting_time())
+
+
 class Distribution:
     def __init__(self, distribution, *args):
         self.distribution = distribution
@@ -98,10 +132,12 @@ class Sim:
     
     def __init__(self, servers, arrival_dist, total_time):
         
+        self.stats : StatisticsHolder = StatisticsHolder()
+
         #time variable
         self.Time = 0
         self.TotalTime = total_time
-
+        
         amount_of_servers = len(servers)
         self.stateVariables = StateVariables(amount_of_servers)
 
@@ -134,6 +170,7 @@ class Sim:
 
                 self.Time = self.NextArrivalTime
                 self.NArrivals += 1
+                self.stats.num_clients += 1
                 self.NextArrivalTime = self.Time + self.arrival_dist()
 
                 # print("Number of Arrivals: ", self.NArrivals)
@@ -143,7 +180,11 @@ class Sim:
 
                 #If theres no server available, it returns -1, if there is one, we calculate the next departure from that server
                 if server_Number != -1:
-                    self.DepartureTime[server_Number] = self.Time + self.servers[server_Number]()
+                    self.stats.num_clients_served += 1
+                    waiting_time = self.servers[server_Number]()
+
+                    self.DepartureTime[server_Number] = self.Time + waiting_time
+                    self.stats.add_waiting_time(waiting_time)
                 
                 else:
                     pass
@@ -161,7 +202,11 @@ class Sim:
                 if(self.stateVariables.Clients_On_Queue > 0):
                     
                     self.stateVariables.Place_From_Queue(next_departure_index)
-                    self.DepartureTime[next_departure_index] = self.Time + self.servers[next_departure_index]()
+                    waiting_time = self.servers[next_departure_index]()
+                    self.DepartureTime[next_departure_index] = self.Time + waiting_time
+                    
+                    self.stats.add_waiting_time(waiting_time)
+                    self.stats.num_clients_served += 1
 
                 else:
                     self.DepartureTime[next_departure_index] = float('inf')
@@ -178,7 +223,6 @@ class Sim:
                     self.DepartureTime[next_departure_index] = self.Time + self.servers[next_departure_index]()
 
                 if self.stateVariables.NoMoreClients():
-                    # print(self.stateVariables.Client_On_Server)
                     break
 
             # print("Clients on Queue: ", self.stateVariables.Clients_On_Queue)
@@ -188,16 +232,16 @@ class Sim:
 
 
 def one_run():
-    # Simulate the system 1000 times
     server1 = Normal(5,8)
     server2 = Uniform(4,3)
     server3 = Exponential(5)
 
     arrival = Poisson(1)
 
-    sim = Sim([server1, server2, server3], arrival, total_time=60*8)
+    sim = Sim([server1, server2, server3], arrival, total_time=100)
     sim.run()
+    sim.stats.print_stats()
 
 
-for i in range(1000):
+for i in range(1):
     one_run()
