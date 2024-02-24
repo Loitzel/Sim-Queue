@@ -106,14 +106,14 @@ Usamos estas distribuciones ya que en la literatura se ha demostrado que son las
 #### Probabilidad de que el cliente tenga que esperar en la cola
 La probabilidad de que un cliente tenga que esperar en la cola se puede calcular utilizando la fórmula de Erlang C, que se define como:
 
-![formula](/images/Screenshot 2024-02-23 233644.png)
+![formula](/images/6.png)
 
 
 
 #### Cantidad promedio de clientes en el sistema
 La cantidad promedio de clientes en el sistema se puede calcular utilizando la siguiente formula:
     
-![formula](/images/Screenshot%202024-02-23%20233707.png)
+![formula](/images/7.png)
 
 
 C(c, p): representa la formula de Erlang C, que se utiliza para calcular la probabilidad de que un cliente tenga que esperar en la cola.
@@ -126,7 +126,7 @@ La probabilidad de que el sistema tenga 0 clientes se puede calcular utilizando 
 #### Cantidad de personas promedio en la cola
 La cantidad promedio de clientes en la cola se puede calcular utilizando la siguiente formula:
 
-![formula](/images/Screenshot 2024-02-23 234855.png)
+![formula](/images/10.png)
 
 #### Tiempo promedio que un cliente pasa en la cola
 El tiempo promedio que un cliente pasa en la cola se puede calcular utilizando la siguiente formula:
@@ -136,16 +136,16 @@ El tiempo promedio que un cliente pasa en la cola se puede calcular utilizando l
 #### Tiempo promedio que un cliente pasa en el sistema
 El tiempo promedio que un cliente pasa en el sistema se puede calcular utilizando la siguiente formula:
 
-![formula](/images/Screenshot 2024-02-23 233553.png)
+![formula](/images/4.png)
 
 ## Comparaciones
 > Resultados de las metricas
 > 
-> ![foto](/images/Screenshot 2024-02-23 234029.png)
+> ![foto](/images/9.png)
 
 > Resultados obtenidos en la simulacion
 > 
-> ![foto](/images/Screenshot 2024-02-23 234015.png)
+> ![foto](/images/8.png)
 
 Como se puede observar, los resultados obtenidos de la simulación son consistentes con las fórmulas teóricas. Esto indica que el modelo de simulación implementado es preciso y puede utilizarse para comprender el comportamiento y el rendimiento del sistema M/M/c.
 
