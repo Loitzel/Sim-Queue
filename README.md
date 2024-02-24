@@ -139,6 +139,13 @@ El tiempo promedio que un cliente pasa en el sistema se puede calcular utilizand
 ![formula](/images/4.png)
 
 ## Comparaciones
+> Para una simulacion, repetida 1000 veces con los siguientes parametros:
+> 
+> - lambda = 2 
+> - mu = 1 
+> - c = 3
+
+
 > Resultados de las metricas
 > 
 > ![foto](/images/9.png)
