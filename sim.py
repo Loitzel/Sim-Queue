@@ -10,63 +10,90 @@ def generate_statistical_data(k, acceptable_deviation):
     for i in range(k):
         global_data.append(one_run())
 
-    waiting_times = [x.average_waiting_time() for x in global_data]
-    max_waiting_times = [x.max_waiting_time() for x in global_data]
+    # waiting_times = [x.average_waiting_time() for x in global_data]
+    # max_waiting_times = [x.max_waiting_time() for x in global_data]
     probabilities_of_waiting = [x.probability_of_waiting_in_queue() for x in global_data]
     num_clients_served = [x.num_clients_served for x in global_data]
     num_clients = [x.num_clients for x in global_data]
+    empty_times = [x.probability_of_empty() for x in global_data]
+    queue_length = [x.avg_clients_in_queue() for x in global_data]
+    avg_time_on_queue = [x.avg_time_on_queue() for x in global_data]
+    avg_time_in_system = [x.avg_time_in_system() for x in global_data]
 
-    # Usando la función para calcular las medias
-    mean_waiting_times = calculate_mean(waiting_times)
-    mean_max_waiting_times = calculate_mean(max_waiting_times)
-    mean_probabilities_of_waiting = calculate_mean(probabilities_of_waiting)
-    mean_num_clients_served = calculate_mean(num_clients_served)
-    mean_num_clients = calculate_mean(num_clients)
+    variables = [ probabilities_of_waiting, num_clients_served, num_clients,
+                 empty_times, queue_length, avg_time_on_queue, avg_time_in_system]
 
-    # Usando la función para calcular las varianzas
-    variance_waiting_times = calculate_variance(waiting_times, mean_waiting_times)
-    variance_max_waiting_times = calculate_variance(max_waiting_times, mean_max_waiting_times)
-    variance_probabilities_of_waiting = calculate_variance(probabilities_of_waiting, mean_probabilities_of_waiting)
-    variance_num_clients_served = calculate_variance(num_clients_served, mean_num_clients_served)
-    variance_num_clients = calculate_variance(num_clients, mean_num_clients)
+    means = [calculate_mean(x) for x in variables]
+    variances = [calculate_variance(x, means[i]) for i, x in enumerate(variables)]
+    standard_errors = [math.sqrt(x / k) for x in variances]
+    confidence_intervals = [(means[i] - 1.96 * standard_errors[i], means[i] + 1.96 * standard_errors[i]) for i in range(len(means))]
+    amplitudes = [confidence_intervals[i][1] - confidence_intervals[i][0] for i in range(len(confidence_intervals))]
 
-    # Calcular el error estándar
-    standard_error_waiting_times = math.sqrt(variance_waiting_times / k)
-    standard_error_max_waiting_times = math.sqrt(variance_max_waiting_times / k)
-    standard_error_probabilities_of_waiting = math.sqrt(variance_probabilities_of_waiting / k)
-    standard_error_num_clients_served = math.sqrt(variance_num_clients_served / k)
-    standard_error_num_clients = math.sqrt(variance_num_clients / k)
+    data = []
 
-    # Calcular el intervalo de confianza para 95% de confianza
-    confidence_interval_waiting_times = (mean_waiting_times - 1.96 * standard_error_waiting_times, mean_waiting_times + 1.96 * standard_error_waiting_times)
-    confidence_interval_max_waiting_times = (mean_max_waiting_times - 1.96 * standard_error_max_waiting_times, mean_max_waiting_times + 1.96 * standard_error_max_waiting_times)
-    confidence_interval_probabilities_of_waiting = (mean_probabilities_of_waiting - 1.96 * standard_error_probabilities_of_waiting, mean_probabilities_of_waiting + 1.96 * standard_error_probabilities_of_waiting)
-    confidence_interval_num_clients_served = (mean_num_clients_served - 1.96 * standard_error_num_clients_served, mean_num_clients_served + 1.96 * standard_error_num_clients_served)
-    confidence_interval_num_clients = (mean_num_clients - 1.96 * standard_error_num_clients, mean_num_clients + 1.96 * standard_error_num_clients)
-
-    # Calcular la amplitud del intervalo de confianza para cada estadística
-    amplitude_waiting_times = confidence_interval_waiting_times[1] - confidence_interval_waiting_times[0]
-    amplitude_max_waiting_times = confidence_interval_max_waiting_times[1] - confidence_interval_max_waiting_times[0]
-    amplitude_probabilities_of_waiting = confidence_interval_probabilities_of_waiting[1] - confidence_interval_probabilities_of_waiting[0]
-    amplitude_num_clients_served = confidence_interval_num_clients_served[1] - confidence_interval_num_clients_served[0]
-    amplitude_num_clients = confidence_interval_num_clients[1] - confidence_interval_num_clients[0]
-    
+    case = [ "Probabilities of Waiting", "Num Clients Served", "Num Clients",
+            "Probability of 0 clients in the system", "Avg Clients in Queue", "Avg Time on Queue", "Avg Time in System"]
     # Definir los datos como una lista de tuplas
-    data = [
-        ("Waiting Times", mean_waiting_times, variance_waiting_times, standard_error_waiting_times, confidence_interval_waiting_times, amplitude_waiting_times),
-        ("Max Waiting Times", mean_max_waiting_times, variance_max_waiting_times, standard_error_max_waiting_times, confidence_interval_max_waiting_times, amplitude_max_waiting_times),
-        ("Probabilities of Waiting", mean_probabilities_of_waiting, variance_probabilities_of_waiting, standard_error_probabilities_of_waiting, confidence_interval_probabilities_of_waiting, amplitude_probabilities_of_waiting),
-        ("Num Clients Served", mean_num_clients_served, variance_num_clients_served, standard_error_num_clients_served, confidence_interval_num_clients_served, amplitude_num_clients_served),
-        ("Num Clients", mean_num_clients, variance_num_clients, standard_error_num_clients, confidence_interval_num_clients, amplitude_num_clients)
-    ]
+
+    for i in range(len(case)):
+        row =  means[i], variances[i], standard_errors[i], confidence_intervals[i], amplitudes[i]
+        data.append(row)
+
+    # Definir los encabezados de las filas
+    for i in range(len(case)):
+        data[i] = (case[i],) + data[i]
 
     # Definir los encabezados de la tabla
     headers = ["Variable", "Mean", "Variance", "Standard Error", "95% Confidence Interval", "Amplitude"]
 
     # Imprimir la tabla utilizando la función tabulate
-    print(tabulate(data, headers=headers, tablefmt="grid"))
+    table = tabulate(data, headers=headers, tablefmt="grid")
 
-    
+    print(table)
+
+    return table
+
+def generate_mathematical_analysis(lambda_, c, mu, time):
+    rho = lambda_ / (c *mu)
+
+    def probability_of_queuing():
+        #Erlang C Formula
+        den = 1
+        den_ = 1-rho
+        den_ *= math.factorial(c) / (c * rho)**c
+        den_ *= sum([ (c*rho)**i / math.factorial(i) for i in range(c)])
+        den += den_
+        return 1 / den
+
+    def average_clients_in_system():
+        return rho/(1-rho) * probability_of_queuing() + c*rho
+
+    def p0():
+        den = sum([(c*rho)**i / math.factorial(i) for i in range(c)])
+        den += (c*rho)**c / (math.factorial(c) * (1-rho))
+        return 1 / den
+
+    def lq():
+        return p0() * (c*rho)**c * rho / (math.factorial(c) * (1-rho)**2)
+
+    def wq():
+        return lq() / lambda_
+
+    def w():
+        return wq() + 1/mu
+
+    def l():
+        return lambda_ * w()
+
+    print(f'Mathematical Results: \n\n☻ Probability of waiting in a queue: {probability_of_queuing()} '
+          f'\n☻ Average number of clients in the system: {average_clients_in_system()*time}'
+          f'\n☻ Probability of 0 clients in the system: {p0()}'
+            f'\n☻ Average number of clients in the queue: {lq()*time}'
+            f'\n☻ Average time a client spends in the queue: {wq()}'
+            f'\n☻ Average time a client spends in the system: {w()}')
+
+
+
     
 
 def calculate_mean(data):
@@ -77,13 +104,19 @@ def calculate_variance(data, mean):
     return sum_squared_diff / (len(data) - 1)
 
 class StatisticsHolder:
-    def __init__(self):
+    def __init__(self, T):
         self.waiting_times = []
         self.total_wait_time = 0
         self.max_wait_time = float('-inf')
         self.num_clients_served = 0
         self.num_clients = 0
         self.customers_in_queue_due_to_wait = 0
+        self.empty_times = []
+        self.T = T
+        self.clients_in_queue = []
+        self.queued = 0
+        self.time_in_queue = {}
+        self.time_in_system = {}
 
     def add_waiting_time(self, waiting_time):
         self.waiting_times.append(waiting_time)
@@ -106,6 +139,25 @@ class StatisticsHolder:
     
     def probability_of_waiting_in_queue(self):
         return self.customers_in_queue_due_to_wait / self.num_clients
+
+    def calc_empty_time(self):
+        emp = 0
+        for i in range(0, len(self.empty_times), 2):
+            emp += self.empty_times[i + 1] - self.empty_times[i]
+        return emp
+
+    def probability_of_empty(self):
+        return self.calc_empty_time() / self.T
+
+    def avg_clients_in_queue(self):
+        return self.queued
+
+    def avg_time_on_queue(self):
+        return sum(self.time_in_queue.values()) / len(self.time_in_queue)
+
+    def avg_time_in_system(self):
+        return sum(self.time_in_system.values()) / len(self.time_in_system)
+
     
     def print_stats(self):
         print("Total clients served:", self.num_clients_served)
@@ -114,7 +166,11 @@ class StatisticsHolder:
         print("Probability of waiting in queue:", self.probability_of_waiting_in_queue())
         print("Average waiting time:", self.average_waiting_time())
         print("Max waiting time:", self.max_waiting_time())
+        print("Empty time:", self.calc_empty_time())
 
+
+
+    
 
 class Distribution:
     def __init__(self, distribution, *args):
@@ -129,7 +185,8 @@ class Poisson(Distribution):
         super().__init__('variable_poisson', *args)
 
     def __call__(self):
-        return np.random.poisson(self.args[0])
+        # times between events that distribute poisson, follow exponential distribution
+        return np.log(1 - np.random.random()) / -self.args[0]
 
 class Exponential(Distribution):
     def __init__(self, *args):
@@ -155,13 +212,15 @@ class Normal(Distribution):
 
 
 class StateVariables:
-    def __init__(self, array_size):
+    def __init__(self, array_size, stat):
         self.Clients_On_Queue = 0
         self.Client_On_Server = [0] * array_size
         self.queue = queue.Queue()
         self.last_client = 0
+        self.queued = 0
+        self.stats : StatisticsHolder = stat
 
-    def AddClient(self):
+    def AddClient(self, t):
         
         freeServer = self.FindFirstFreeServer()
 
@@ -169,11 +228,17 @@ class StateVariables:
         self.last_client += 1
         self.queue.put(self.last_client)
         self.Clients_On_Queue += 1
+        self.stats.time_in_queue[self.last_client] = t
+        self.stats.time_in_system[self.last_client] = t
 
         if freeServer != -1:
             self.Clients_On_Queue -= 1
             next_client = self.queue.get()
             self.Client_On_Server[freeServer] = next_client
+            self.stats.time_in_queue[next_client] = t - self.stats.time_in_queue[next_client]
+
+        else:
+            self.queued += 1
 
         return freeServer
 
@@ -184,16 +249,20 @@ class StateVariables:
                 return i
         return -1
     
-    def RemoveClient(self, server_number):
+    def RemoveClient(self, server_number, t):
+        cl = self.Client_On_Server[server_number]
+        if cl != 0:
+            self.stats.time_in_system[cl] = t - self.stats.time_in_system[cl]
 
         self.Client_On_Server[server_number] = 0
 
 
-    def Place_From_Queue(self, server_number):
+    def Place_From_Queue(self, server_number, t):
         if self.Clients_On_Queue > 0:
             self.Clients_On_Queue -= 1
             next_client = self.queue.get()
             self.Client_On_Server[server_number] = next_client
+            self.stats.time_in_queue[next_client] = t - self.stats.time_in_queue[next_client]
             return True
 
         return False
@@ -212,14 +281,14 @@ class Sim:
     
     def __init__(self, servers, arrival_dist, total_time):
         
-        self.stats : StatisticsHolder = StatisticsHolder()
+        self.stats : StatisticsHolder = StatisticsHolder(total_time)
 
         #time variable
         self.Time = 0
         self.TotalTime = total_time
         
         amount_of_servers = len(servers)
-        self.stateVariables = StateVariables(amount_of_servers)
+        self.stateVariables = StateVariables(amount_of_servers, self.stats)
 
         #Counter Variables
         self.NArrivals = 0 #Total number of arrivals at time t
@@ -235,10 +304,11 @@ class Sim:
 
         #Events
         self.nextArrival = 0
-        self.nextDeparture = [0] * amount_of_servers 
+        self.nextDeparture = [0] * amount_of_servers
+
+        self.used = False
 
     def run(self):
-
         while True:
             
             next_event = min(self.NextArrivalTime, min(self.DepartureTime))
@@ -246,17 +316,20 @@ class Sim:
             
             #Case 1: A client arrives before someone else leaves
             if self.NextArrivalTime == next_event and self.Time <= self.TotalTime:
-                
+
+                if self.used is False:
+                    self.stats.empty_times.append(self.Time)
+                    self.stats.empty_times.append(self.NextArrivalTime)
+                    self.used = True
+
 
                 self.Time = self.NextArrivalTime
                 self.NArrivals += 1
                 self.stats.num_clients += 1
                 self.NextArrivalTime = self.Time + self.arrival_dist()
 
-                # print("Number of Arrivals: ", self.NArrivals)
-                
                 #Add the client that just arrived, the method on stateVariables handles the location of the client, returns -1 if theres no server available
-                server_Number = self.stateVariables.AddClient()
+                server_Number = self.stateVariables.AddClient(self.Time)
 
                 #If theres no server available, it returns -1, if there is one, we calculate the next departure from that server
                 if server_Number != -1:
@@ -265,24 +338,25 @@ class Sim:
 
                     self.DepartureTime[server_Number] = self.Time + waiting_time
                     self.stats.add_waiting_time(waiting_time)
+
                 
                 else:
                     self.stats.customers_in_queue_due_to_wait += 1
                     pass
+
+                self.stats.clients_in_queue.append(self.stateVariables.Clients_On_Queue)
             
             #Case 2: A client leaves a server
             elif self.Time <= self.TotalTime:
 
                 self.Time = next_event
                 self.NDepartures[next_departure_index] += 1
-
-                # print("Client is leaving, number: " + str(self.stateVariables.Client_On_Server[next_departure_index]))
-                self.stateVariables.RemoveClient(next_departure_index)
+                self.stateVariables.RemoveClient(next_departure_index, self.Time)
 
                 #If theres someone waiting for be attended, we place it on the now free server
                 if(self.stateVariables.Clients_On_Queue > 0):
                     
-                    self.stateVariables.Place_From_Queue(next_departure_index)
+                    self.stateVariables.Place_From_Queue(next_departure_index, self.Time)
                     waiting_time = self.servers[next_departure_index]()
                     self.DepartureTime[next_departure_index] = self.Time + waiting_time
                     
@@ -292,41 +366,53 @@ class Sim:
                 else:
                     self.DepartureTime[next_departure_index] = float('inf')
 
+                if self.stateVariables.NoMoreClients():
+                    self.used = False
+
+                self.stats.clients_in_queue.append(self.stateVariables.Clients_On_Queue)
+
             #Case 3: Time is over, we attend the rest of the clients
             else:
                 self.Time = next_event
                 self.NDepartures[next_departure_index] += 1
-                self.stateVariables.RemoveClient(next_departure_index)
+                self.stateVariables.RemoveClient(next_departure_index, self.Time)
                 self.DepartureTime[next_departure_index] = float('inf')
 
                 if(self.stateVariables.Clients_On_Queue > 0):
-                    self.stateVariables.Place_From_Queue(next_departure_index)
+                    self.stateVariables.Place_From_Queue(next_departure_index, self.Time)
                     self.DepartureTime[next_departure_index] = self.Time + self.servers[next_departure_index]()
 
                 if self.stateVariables.NoMoreClients():
                     break
 
-            # print("Clients on Queue: ", self.stateVariables.Clients_On_Queue)
-            # print(self.stateVariables.Client_On_Server)
-            # print()
-            
+                self.stats.clients_in_queue.append(self.stateVariables.Clients_On_Queue)
 
+        self.stats.queued = self.stateVariables.queued
 
 def one_run():
-    server1 = Exponential(5)
-    server2 = Exponential(6)
-    server3 = Exponential(3)
 
-    arrival = Poisson(1)
 
-    sim = Sim([server1, server2, server3], arrival, total_time=100)
+
+    server1 = Exponential(mu)
+    server2 = Exponential(mu)
+    server3 = Exponential(mu)
+
+    arrival = Poisson(lambda_)
+
+    sim = Sim([server1, server2, server3], arrival, total_time=1000)
     sim.run()
     return sim.stats
 
-k = 100
+lambda_ = 2
+c = 3
+mu = 1
+k = 1000
 acceptable_deviation = 0.05
 
-generate_statistical_data(k, acceptable_deviation)
+table = generate_statistical_data(k, acceptable_deviation)
+
+generate_mathematical_analysis(lambda_, c, mu, k)
+
 
 
 
