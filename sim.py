@@ -11,7 +11,7 @@ def generate_statistical_data(k, acceptable_deviation):
         global_data.append(one_run())
 
     # waiting_times = [x.average_waiting_time() for x in global_data]
-    # max_waiting_times = [x.max_waiting_time() for x in global_data]
+    max_waiting_times = [x.max_time_on_queue() for x in global_data]
     probabilities_of_waiting = [x.probability_of_waiting_in_queue() for x in global_data]
     num_clients_served = [x.num_clients_served for x in global_data]
     num_clients = [x.num_clients for x in global_data]
@@ -20,7 +20,7 @@ def generate_statistical_data(k, acceptable_deviation):
     avg_time_on_queue = [x.avg_time_on_queue() for x in global_data]
     avg_time_in_system = [x.avg_time_in_system() for x in global_data]
 
-    variables = [ probabilities_of_waiting, num_clients_served, num_clients,
+    variables = [ max_waiting_times, probabilities_of_waiting, num_clients_served, num_clients,
                  empty_times, queue_length, avg_time_on_queue, avg_time_in_system]
 
     means = [calculate_mean(x) for x in variables]
@@ -31,7 +31,7 @@ def generate_statistical_data(k, acceptable_deviation):
 
     data = []
 
-    case = [ "Probabilities of Waiting", "Num Clients Served", "Num Clients",
+    case = [ "Max Waiting Time","Probabilities of Waiting", "Num Clients Served", "Num Clients",
             "Probability of 0 clients in the system", "Avg Clients in Queue", "Avg Time on Queue", "Avg Time in System"]
     # Definir los datos como una lista de tuplas
 
@@ -50,11 +50,13 @@ def generate_statistical_data(k, acceptable_deviation):
     table = tabulate(data, headers=headers, tablefmt="grid")
 
     print(table)
-
-    return table
+    # [probability_of_queuing(), l()*time, p0(), lq()*time, wq(),w()]
+    return [means[0], means[1], means[3], means[4], means[5], means[6]], [case[0],case[1],case[3],case[4],case[5],case[6]]
 
 def generate_mathematical_analysis(lambda_, c, mu, time):
     rho = lambda_ / (c *mu)
+
+    print (f'Rho is greater than 1. There results are not accurate') if rho >=1 else print('Values can be trusted')
 
     def probability_of_queuing():
         #Erlang C Formula
@@ -64,9 +66,6 @@ def generate_mathematical_analysis(lambda_, c, mu, time):
         den_ *= sum([ (c*rho)**i / math.factorial(i) for i in range(c)])
         den += den_
         return 1 / den
-
-    def average_clients_in_system():
-        return rho/(1-rho) * probability_of_queuing() + c*rho
 
     def p0():
         den = sum([(c*rho)**i / math.factorial(i) for i in range(c)])
@@ -86,11 +85,15 @@ def generate_mathematical_analysis(lambda_, c, mu, time):
         return lambda_ * w()
 
     print(f'Mathematical Results: \n\n☻ Probability of waiting in a queue: {probability_of_queuing()} '
-          f'\n☻ Average number of clients in the system: {average_clients_in_system()*time}'
+          f'\n☻ Average number of clients in the system: {l()*time}'
           f'\n☻ Probability of 0 clients in the system: {p0()}'
             f'\n☻ Average number of clients in the queue: {lq()*time}'
             f'\n☻ Average time a client spends in the queue: {wq()}'
-            f'\n☻ Average time a client spends in the system: {w()}')
+            f'\n☻ Average time a client spends in the system: {w()}'
+          )
+
+    return [probability_of_queuing(), l()*time, p0(), lq()*time, wq(),w()]
+
 
 
 
@@ -117,6 +120,8 @@ class StatisticsHolder:
         self.queued = 0
         self.time_in_queue = {}
         self.time_in_system = {}
+
+        self.client_before_time = 0
 
     def add_waiting_time(self, waiting_time):
         self.waiting_times.append(waiting_time)
@@ -155,9 +160,14 @@ class StatisticsHolder:
     def avg_time_on_queue(self):
         return sum(self.time_in_queue.values()) / len(self.time_in_queue)
 
+    def max_time_on_queue(self):
+        return max(self.time_in_queue.values())
+
     def avg_time_in_system(self):
         return sum(self.time_in_system.values()) / len(self.time_in_system)
 
+    def client_bf(self):
+        return self.client_before_time
     
     def print_stats(self):
         print("Total clients served:", self.num_clients_served)
@@ -263,6 +273,8 @@ class StateVariables:
             next_client = self.queue.get()
             self.Client_On_Server[server_number] = next_client
             self.stats.time_in_queue[next_client] = t - self.stats.time_in_queue[next_client]
+
+
             return True
 
         return False
@@ -307,6 +319,7 @@ class Sim:
         self.nextDeparture = [0] * amount_of_servers
 
         self.used = False
+
 
     def run(self):
         while True:
@@ -373,14 +386,17 @@ class Sim:
 
             #Case 3: Time is over, we attend the rest of the clients
             else:
+
                 self.Time = next_event
                 self.NDepartures[next_departure_index] += 1
                 self.stateVariables.RemoveClient(next_departure_index, self.Time)
                 self.DepartureTime[next_departure_index] = float('inf')
 
                 if(self.stateVariables.Clients_On_Queue > 0):
+
                     self.stateVariables.Place_From_Queue(next_departure_index, self.Time)
                     self.DepartureTime[next_departure_index] = self.Time + self.servers[next_departure_index]()
+
 
                 if self.stateVariables.NoMoreClients():
                     break
@@ -390,28 +406,32 @@ class Sim:
         self.stats.queued = self.stateVariables.queued
 
 def one_run():
-
-
-
-    server1 = Exponential(mu)
-    server2 = Exponential(mu)
-    server3 = Exponential(mu)
+    server1 = Poisson(mu)
+    # server2 = Exponential(mu)
+    # server3 = Exponential(mu)
 
     arrival = Poisson(lambda_)
 
-    sim = Sim([server1, server2, server3], arrival, total_time=1000)
+    sim = Sim([server1]*c, arrival, total_time)
     sim.run()
     return sim.stats
+
+
 
 lambda_ = 2
 c = 3
 mu = 1
 k = 1000
+total_time = 60*8
 acceptable_deviation = 0.05
 
-table = generate_statistical_data(k, acceptable_deviation)
+print(f'lambda:{lambda_}, mu:{mu}, c:{c}')
 
-generate_mathematical_analysis(lambda_, c, mu, k)
+res, vars = generate_statistical_data(k, acceptable_deviation)
+actual = generate_mathematical_analysis(lambda_, c, mu, total_time)
+
+
+
 
 
 
