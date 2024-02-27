@@ -104,9 +104,9 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
     en cada uno variando solo una variable. 
     
     Para todas las simulaciones mantendremos constante la distribución Poisson como distribución de llegada a la cola (por lo tanto los tiempos entre las llegadas
-    distribuyen de forma exponencial )y la distribucion Poisson como distribución de los tiempos de atención en los servidores ya que estos tiempos también son de forma exponencial.\\
+    distribuyen de forma exponencial) y la distribución Poisson como distribución de los tiempos de atención en los servidores ya que estos tiempos también son de forma exponencial.\\
     $\lambda$ va a representar el parámetro de la distribución de llegada de clientes, $\mu$ va a representar el parámetro
-    de la distribución de los tiempos de atencián, y $n$ representará la cantidad de servidores.
+    de la distribución de los tiempos de atención, y $n$ representará la cantidad de servidores.
 
     
     \subsubsection{Simulación 1}
@@ -130,16 +130,16 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
 \textit{Tiempo promedio en cola}                  & 0.43           & 0.009             & 0.003                         \\ \hline
 \textit{Tiempo promedio en el sistema}            & 1.43           & 0.01              & 0.003                         \\ \hline
 \end{tabular}
-\end{table} \\
+\end{table} 
 
     \subsubsection{Simulación 2}
 
-    Ahora probaremos con las mismas variables, solo cambiando $\lambda = 4$ \\
+    Ahora probaremos con las mismas variables, solo cambiando $\lambda = 4$ 
     \begin{itemize}
         \item $\lambda$ = 4
         \item $\mu$ = 1
         \item $n$ = 3
-    \end{itemize} \\
+    \end{itemize} 
 
     \begin{table}[h]
 \begin{tabular}{|l|l|l|l|}
@@ -151,7 +151,7 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
 \textit{Tiempo promedio en cola}                  & 59.85           & 54.42            & 0.34                       \\ \hline
 \textit{Tiempo promedio en el sistema}            & 60.59           & 54.29             & 0.23                      \\ \hline
 \end{tabular}
-\end{table}\\
+\end{table}
 
     \newpage
 \subsubsection{Simulación 3}
@@ -160,7 +160,7 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
         \item $\lambda$ = 2
         \item $\mu$ = 4
         \item $n$ = 3
-    \end{itemize} \\
+    \end{itemize}
 
     \begin{table}[h]
 \begin{tabular}{|l|l|l|l|}
@@ -172,7 +172,7 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
 \textit{Tiempo promedio en cola}                  & 0.0015           & 0.00000084            & 0.000029                     \\ \hline
 \textit{Tiempo promedio en el sistema}            & 0.2513           & 0.000073             & 0.00027                      \\ \hline
 \end{tabular}
-\end{table} \\
+\end{table} 
 
     \subsubsection{Simulación 4}
     Ahora probaremos con las mismas variables, solo cambiando $ n = 8$ \\
@@ -181,9 +181,9 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
         \item $\lambda$ = 2
         \item $\mu $= 1
         \item $n$ = 8
-    \end{itemize} \\
+    \end{itemize}
 
-    \begin{table}[h]
+\begin{table}[h]
 \begin{tabular}{|l|l|l|l|}
 \hline
 \textbf{variable}                                 & \textbf{media} & \textbf{varianza} & \textbf{desviación estándar} \\ \hline
@@ -193,7 +193,7 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
 \textit{Tiempo promedio en cola}                  & 0.0002          & 0.00000018            & 0.000013                     \\ \hline
 \textit{Tiempo promedio en el sistema}            & 0.999           & 0.0010             & 0.001                     \\ \hline
 \end{tabular}
-\end{table}\\
+\end{table}
 
 
 
@@ -211,7 +211,7 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
 
     \subsubsection{Variando el valor $\mu$}
     Podemos apreciar que al aumentar el valor de $\mu$ y mantener todos los demás valores igual :
-     \begin{itemize}
+    \begin{itemize}
         \item La cantidad de personas encoladas disminuyen, ya que los tiempos de atención de los servidores disminuyen porque los servidores pueden soportar una carga mayor (esto es lo que $\mu$ representa en este caso)
         \item Los tiempos promedio que una persona permanece en la cola, y por ende en el sistema, disminuyen.
         \item Al disminuir el tiempo de atención, la probabilidad de encolarse disminuye, y la probabilidad de que el sistema esté vacío aumenta.
@@ -228,9 +228,8 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
 
     \subsubsection{Alta varianza en resultados}
     Una alta varianza en los resultados nos dice que los valores varían notablemente entre las simulaciones.\\
-    Como puede ser observado, en todos los experimentos el valor de la varianza de la longitud promedio de la cola es mayor que la media de este mismo.
-    Esto se debe principalmente a la capacidad del sistema. Si la capacidad del sistema ($n$) es insuficiente para manejar la demanda, se producirán congestiones
-    y variaciones en la longitud de la cola. Esto es evidente al observar que la simulación con menor varianza es en la que se modifica el valor de $n$.
+    En nuestras simulaciones, la varianza es alta en la cantidad de clientes en el sistema y en la longitud promedio de la cola. 
+    Esto nos dice que el sistema es muy sensible a cambios en los parámetros, y que los resultados pueden variar mucho entre simulaciones.\\
 
 
     \subsection{Necesidad de realizar el análisis estadístico a la simulación}
@@ -246,19 +245,18 @@ Para facilitar el uso de nuestra implementación, se han dejado ya implementadas
 
 
     \subsection{Análisis de parada de la simulación}
-    Las colas se forman cuando hay un desequilibrio entre la demanda del servicio y la capacidad del sistema.
-    Se debe encontrar un equilibrio entre proporcionar un buen servicio y minimizar el tiempo de espera.
-    El análisis de parada ayuda a determinar cuándo agregar o reducir recursos (como servidores) para optimizar el sistema.
-    A medida que se mejora el servicio disminuye el tiempo en la cola, pero aumentan los costos.
+    En nuestra simulación, se establecieron dos criterios de parada principales para determinar el momento adecuado para finalizar las corridas:
 
-    Para llevar a cabo un correcto análisis de parada, se deben generar simulaciones variando los parámetros $\lambda , \mu$ y $n $, observando cómo cambian las métricas
-    y tratar de llegar a un balance.
+    \begin{itemize}
+    \item Desviación estándar: Buscábamos una desviación estándar pequeña en los resultados de las simulaciones. La desviación estándar mide la dispersión de los datos alrededor de la media, por lo que buscamos un valor bajo (menor al 10\% de la media) lo cual indica que los resultados son consistentes y confiables.
 
-    Un índice a tomar en cuenta es el valor de $\rho = \lambda /c\mu$, ya que  $\rho \lessdot 1$ indica que la cola puede
-    alcanzar un estado estable y no crecer infinitamente.
+    \item Número de simulaciones: Se ejecutó un gran número de simulaciones para obtener un conjunto de datos robusto y minimizar el impacto de la aleatoriedad inherente a las simulaciones.
+    \end{itemize}
 
-    En resúmen, el análisis de parada en simulaciones de colas es esencial para tomar decisiones informadas sobre la gestión de recursos y la
-    eficiencia del sistema.
+    \subsection{Validación con el modelo matemático:}
+
+    Para corroborar la precisión de la simulación, se compararon los resultados con los valores obtenidos mediante el modelo matemático correspondiente. Esta comparación permitió verificar que la simulación se comporta como se esperaba, siguiendo las predicciones del modelo teórico.
+
 
 
 
@@ -273,11 +271,8 @@ El tamaño de la cola es infinito, lo que significa que no hay límite para la c
 Usamos estas distribuciones ya que en la literatura se ha demostrado que son las más adecuadas para modelar sistemas de colas, y podremos usar los resultados de la teoría de cola para comparar con los resultados obtenidos en la simulación.
 
     \subsection{Comparación con la teoría de colas}
-    La teoría de colas es un campo de estudio que se ocupa de la gestión de líneas de espera y la asignación de recursos.
-    La teoría de colas proporciona herramientas y técnicas para analizar y comprender el comportamiento de los sistemas de
-    colas y para evaluar su desempeño.
     Este modelo se compara con la teoría de colas para validar los resultados obtenidos. La
-    teoría de colas proporciona fórmulas y ecuaciones para calcular y predecir el comportamiento de los sistemas de colas.
+    teoría de colas nos proporciona fórmulas y ecuaciones para calcular y predecir el comportamiento de los sistemas de colas.
 
 
     \begin{itemize}
@@ -320,7 +315,9 @@ Longitud de cola                & 1.139                                   & 0.18
 Tiempo en cola                  & 0.00019                                 & 0.00019      & 0.0022                                  & 0.0022       & 0.00027                                 & 0.00025      \\ \cline{1-1}
 Tiempo en sistema               & 0.9986                                  & 1.0001       & 0.3357                                  & 0.3356       & 0.5001                                  & 0.5002       \\ \hline
 \end{tabular}
-\end{table} \\[20pt]
+\end{table}
+
+[20pt]
 
     Ejemplo de análisis estadístico que realizamos a las variables:
 
